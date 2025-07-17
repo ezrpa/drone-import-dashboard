@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ReferenceLine, ScatterChart, Scatter, Area, AreaChart, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { Sliders, DollarSign, Plane, Settings, TrendingUp, AlertTriangle, Target, Calculator, Award, Zap, Package, Truck, Shield, Info, HelpCircle, Bell, TrendingDown } from 'lucide-react';
+import { Sliders, DollarSign, Plane, Settings, TrendingUp, AlertTriangle, Target, Calculator, Award, Zap, Package, Truck, Shield, Info, HelpCircle, Bell, TrendingDown, Save, Database, History, Download } from 'lucide-react';
+import { droneAnalysisService } from './lib/supabase';
 
 const DroneImportDashboard = () => {
   // Base data from ADP Trading quote - updated exchange rate
@@ -31,6 +32,12 @@ const DroneImportDashboard = () => {
   // UI state for help tooltips
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
+
+  // Supabase integration state
+  const [savedAnalyses, setSavedAnalyses] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [showSavedAnalyses, setShowSavedAnalyses] = useState(false);
 
   // Sensitivity ranges for analysis
   const sensitivityRanges = {
@@ -319,6 +326,72 @@ const DroneImportDashboard = () => {
   const costs = useMemo(() => {
     return calculateCostsWithParams(baseParams, droneSpecs);
   }, [baseParams, droneSpecs]);
+
+  // Supabase integration functions
+  const saveCurrentAnalysis = async () => {
+    setIsLoading(true);
+    setSaveStatus(null);
+
+    const analysisData = {
+      droneModel: droneSpecs.model,
+      condition: droneSpecs.condition,
+      purchasePrice: droneSpecs.priceOverride || costs.basePrice,
+      quantity: baseParams.quantity,
+      totalCostUSD: costs.totalDdpUsd,
+      totalCostARS: costs.totalDdpArs,
+      costPerDrone: costs.costPerDrone,
+      profitPerDrone: costs.profitPerDrone,
+      totalProfit: costs.totalProfit,
+      importAdvantage: costs.importAdvantageCalculated,
+      exchangeRate: baseParams.exchangeRate,
+      targetMargin: baseParams.targetMargin,
+      freightMultiplier: costs.freightMultiplier,
+      challengeMultiplier: costs.challengeMultiplier,
+      baseParams,
+      droneSpecs,
+      costs
+    };
+
+    const result = await droneAnalysisService.saveAnalysis(analysisData);
+    
+    if (result.success) {
+      setSaveStatus('success');
+      loadSavedAnalyses(); // Refresh the list
+    } else {
+      setSaveStatus('error');
+      console.error('Failed to save analysis:', result.error);
+    }
+    
+    setIsLoading(false);
+    setTimeout(() => setSaveStatus(null), 3000);
+  };
+
+  const loadSavedAnalyses = async () => {
+    const result = await droneAnalysisService.getAnalyses(20);
+    if (result.success) {
+      setSavedAnalyses(result.data);
+    }
+  };
+
+  const loadAnalysis = (analysis) => {
+    if (analysis.analysis_data && analysis.analysis_data.baseParams && analysis.analysis_data.droneSpecs) {
+      setBaseParams(analysis.analysis_data.baseParams);
+      setDroneSpecs(analysis.analysis_data.droneSpecs);
+      setShowSavedAnalyses(false);
+    }
+  };
+
+  const deleteAnalysis = async (id) => {
+    const result = await droneAnalysisService.deleteAnalysis(id);
+    if (result.success) {
+      loadSavedAnalyses();
+    }
+  };
+
+  // Load saved analyses on component mount
+  useEffect(() => {
+    loadSavedAnalyses();
+  }, []);
 
   // Threshold alerts
   const alerts = useMemo(() => {
@@ -619,6 +692,26 @@ const DroneImportDashboard = () => {
                 >
                   <HelpCircle size={24} />
                 </button>
+                
+                {/* Supabase Action Buttons */}
+                <div className="flex items-center gap-2 ml-4">
+                  <button
+                    onClick={saveCurrentAnalysis}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    <Save size={16} />
+                    {isLoading ? 'Saving...' : 'Save Analysis'}
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowSavedAnalyses(!showSavedAnalyses)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <History size={16} />
+                    History ({savedAnalyses.length})
+                  </button>
+                </div>
               </div>
               <p className="text-gray-600 mt-2">Dallas, TX → Buenos Aires, Argentina</p>
               <p className="text-sm text-gray-500 mt-1">
@@ -682,6 +775,80 @@ const DroneImportDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Save Status */}
+        {saveStatus && (
+          <div className={`rounded-lg p-4 mb-6 ${
+            saveStatus === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-center gap-2">
+              <Database className={saveStatus === 'success' ? 'text-green-600' : 'text-red-600'} size={20} />
+              <span className={saveStatus === 'success' ? 'text-green-800' : 'text-red-800'}>
+                {saveStatus === 'success' ? 'Analysis saved successfully!' : 'Failed to save analysis. Please try again.'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Saved Analyses Panel */}
+        {showSavedAnalyses && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <History className="text-blue-600" />
+              Saved Analyses ({savedAnalyses.length})
+            </h3>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {savedAnalyses.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No saved analyses yet. Save your current analysis to see it here.</p>
+              ) : (
+                savedAnalyses.map((analysis) => (
+                  <div key={analysis.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{analysis.drone_model}</h4>
+                            <p className="text-sm text-gray-600">
+                              {analysis.condition} • {analysis.quantity} units • ${analysis.cost_per_drone.toLocaleString()}/drone
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(analysis.created_at).toLocaleDateString()} at {new Date(analysis.created_at).toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-semibold text-green-600">
+                              ${analysis.total_cost_usd.toLocaleString()}
+                            </div>
+                            <div className="text-sm text-blue-600">
+                              {analysis.import_advantage.toFixed(1)}x advantage
+                            </div>
+                            <div className="text-sm text-purple-600">
+                              ${analysis.total_profit.toLocaleString()} profit
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <button
+                          onClick={() => loadAnalysis(analysis)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                        >
+                          Load
+                        </button>
+                        <button
+                          onClick={() => deleteAnalysis(analysis.id)}
+                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Threshold Alerts */}
         {alerts.length > 0 && (
