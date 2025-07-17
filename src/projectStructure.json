@@ -1,0 +1,52 @@
+{
+  "projectName": "drone-import-dashboard",
+  "description": "Complete React project for Drone Import Analysis Dashboard",
+  "files": {
+    "package.json": {
+      "name": "drone-import-dashboard",
+      "version": "1.0.0",
+      "description": "Enterprise Drone Import Analysis Dashboard - Argentina Import Calculator",
+      "main": "src/index.js",
+      "scripts": {
+        "start": "react-scripts start",
+        "build": "react-scripts build",
+        "test": "react-scripts test",
+        "eject": "react-scripts eject"
+      },
+      "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-scripts": "5.0.1",
+        "recharts": "^2.8.0",
+        "lucide-react": "^0.263.1",
+        "tailwindcss": "^3.3.0",
+        "autoprefixer": "^10.4.16",
+        "postcss": "^8.4.31"
+      },
+      "devDependencies": {
+        "@types/react": "^18.2.37",
+        "@types/react-dom": "^18.2.15"
+      },
+      "browserslist": {
+        "production": [
+          ">0.2%",
+          "not dead",
+          "not op_mini all"
+        ],
+        "development": [
+          "last 1 chrome version",
+          "last 1 firefox version",
+          "last 1 safari version"
+        ]
+      }
+    },
+    "public/index.html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\" />\n  <link rel=\"icon\" href=\"%PUBLIC_URL%/favicon.ico\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <meta name=\"theme-color\" content=\"#000000\" />\n  <meta name=\"description\" content=\"Enterprise Drone Import Analysis Dashboard for Argentina\" />\n  <title>Drone Import Dashboard</title>\n</head>\n<body>\n  <noscript>You need to enable JavaScript to run this app.</noscript>\n  <div id=\"root\"></div>\n</body>\n</html>",
+    "public/favicon.ico": "data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA",
+    "src/index.js": "import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport './index.css';\nimport App from './App';\n\nconst root = ReactDOM.createRoot(document.getElementById('root'));\nroot.render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>\n);",
+    "src/index.css": "@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nbody {\n  margin: 0;\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',\n    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',\n    sans-serif;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n\ncode {\n  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',\n    monospace;\n}",
+    "src/App.js": "import React from 'react';\nimport DroneImportDashboard from './components/DroneImportDashboard';\n\nfunction App() {\n  return (\n    <div className=\"App\">\n      <DroneImportDashboard />\n    </div>\n  );\n}\n\nexport default App;",
+    "tailwind.config.js": "/** @type {import('tailwindcss').Config} */\nmodule.exports = {\n  content: [\n    \"./src/**/*.{js,jsx,ts,tsx}\",\n  ],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n}",
+    "postcss.config.js": "module.exports = {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n}",
+    "README.md": "# Drone Import Dashboard\n\nEnterprise Drone Import Analysis Dashboard for calculating costs, taxes, and profit margins when importing drones from Texas, USA to Buenos Aires, Argentina.\n\n## Features\n\n- **Comprehensive Drone Database**: 20+ drone models from consumer to enterprise\n- **Smart Cost Calculations**: Freight multipliers, challenge factors, and Argentine tax structure\n- **Real-time Analysis**: Price sensitivity, profit margins, and import advantages\n- **Interactive Charts**: Tornado charts, pie charts, and price range analysis\n- **Alert System**: Smart recommendations based on current configuration\n\n## Getting Started\n\n### Prerequisites\n\n- Node.js (version 14 or higher)\n- npm or yarn\n\n### Installation\n\n1. Extract the zip file\n2. Navigate to the project directory:\n   ```bash\n   cd drone-import-dashboard\n   ```\n\n3. Install dependencies:\n   ```bash\n   npm install\n   ```\n\n4. Start the development server:\n   ```bash\n   npm start\n   ```\n\n5. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.\n\n## Project Structure\n\n```\nsrc/\n├── components/\n│   ├── DroneImportDashboard.jsx    # Main dashboard component\n│   ├── ui/\n│   │   ├── DashboardHeader.jsx     # Header with metrics\n│   │   ├── AlertsPanel.jsx         # Smart alerts\n│   │   ├── KeyMetrics.jsx          # Key performance indicators\n│   │   ├── ConfigurationPanel.jsx  # Drone configuration\n│   │   ├── SupplierAnalysis.jsx    # Radar chart analysis\n│   │   ├── InfoTooltip.jsx         # Reusable tooltip\n│   │   └── TornadoChart.jsx        # Custom sensitivity chart\n├── models/\n│   ├── droneData.js                # Drone specifications database\n│   ├── taxStructure.js             # Argentine tax rates\n│   └── constants.js                # Application constants\n├── services/\n│   ├── DroneCalculationService.js  # Business logic\n│   └── AlertService.js             # Alert generation\n├── hooks/\n│   └── useDroneCalculations.js     # Custom React hook\n└── utils/\n    └── formatters.js               # Number and currency formatters\n```\n\n## Key Components\n\n### Business Logic\n- **DroneCalculationService**: Handles all cost calculations, tax computations, and profit analysis\n- **AlertService**: Generates smart recommendations based on current configuration\n\n### Data Models\n- **Drone Database**: Comprehensive specifications for 20+ drone models\n- **Tax Structure**: Complete Argentine import tax breakdown\n- **Camera Upgrades**: Available enhancement options\n\n### UI Components\n- **Interactive Charts**: Built with Recharts library\n- **Responsive Design**: Tailwind CSS for modern styling\n- **Smart Tooltips**: Contextual help system\n\n## Available Scripts\n\n- `npm start` - Runs the app in development mode\n- `npm test` - Launches the test runner\n- `npm run build` - Builds the app for production\n- `npm run eject` - Ejects from Create React App (one-way operation)\n\n## Features in Detail\n\n### Cost Calculation Engine\n- Freight multipliers based on drone category (Consumer 1.0x, Enterprise 1.8x, Agricultural 2.5x)\n- Challenge complexity factors for regulatory requirements\n- Complete Argentine tax structure (29.5% total)\n- ADP Trading logistics and management fees\n\n### Analysis Tools\n- **Tornado Charts**: Sensitivity analysis for key variables\n- **Price Range Analysis**: Profit optimization across used market pricing\n- **Import Advantage Calculator**: Compare vs Argentina retail prices\n- **Smart Alerts**: Automated recommendations for optimization\n\n### Drone Categories\n- **Entry Level**: DJI Neo, Mini 2 SE\n- **Consumer**: Mini 4 Pro, Phantom Standard, Air 3S\n- **Professional**: Mavic 3 Pro, Mavic 4 Pro\n- **Enterprise**: Matrice series, thermal inspection drones\n- **Agricultural**: Agras series, Hylio AG series\n- **Specialized**: Cinema drones, mapping platforms\n\n## Configuration\n\nThe dashboard allows real-time configuration of:\n- Drone model selection\n- Price override for market testing\n- Target profit margins (5-50%)\n- Quantity scaling (1-10 units)\n- Exchange rate adjustments\n\n## Built With\n\n- **React 18** - Frontend framework\n- **Tailwind CSS** - Utility-first styling\n- **Recharts** - Chart library\n- **Lucide React** - Icon library\n- **Create React App** - Development environment\n\n## License\n\nThis project is licensed under the MIT License.\n\n## Support\n\nFor questions or support, please contact the development team.\n\n## Changelog\n\n### Version 1.0.0\n- Initial release\n- Complete drone import calculator\n- Interactive dashboard with charts\n- Smart alert system\n- Responsive design"
+  }
+}
