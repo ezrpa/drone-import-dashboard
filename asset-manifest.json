@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/drone-import-dashboard/static/css/main.5b292d45.css",
+    "main.js": "/drone-import-dashboard/static/js/main.ce394412.js",
+    "index.html": "/drone-import-dashboard/index.html",
+    "main.5b292d45.css.map": "/drone-import-dashboard/static/css/main.5b292d45.css.map",
+    "main.ce394412.js.map": "/drone-import-dashboard/static/js/main.ce394412.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5b292d45.css",
+    "static/js/main.ce394412.js"
+  ]
+}
