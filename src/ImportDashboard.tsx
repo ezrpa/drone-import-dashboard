@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ReferenceLine, ScatterChart, Scatter, Area, AreaChart, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { Sliders, DollarSign, Plane, Settings, TrendingUp, AlertTriangle, Target, Calculator, Award, Zap, Package, Truck, Shield, Info, HelpCircle, Bell, TrendingDown, Save, Database, History, Download } from 'lucide-react';
+import { Sliders, DollarSign, Plane, Settings, TrendingUp, AlertTriangle, Target, Calculator, Award, Zap, Package, Truck, Shield, Info, HelpCircle, Bell, TrendingDown, Save, Database, History, Download, ShoppingCart, RefreshCw, ExternalLink } from 'lucide-react';
 import { droneAnalysisService } from './lib/supabase';
+import ebayService from './services/ebayService';
 
 const DroneImportDashboard = () => {
   // Base data from ADP Trading quote - updated exchange rate
@@ -38,6 +39,12 @@ const DroneImportDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [showSavedAnalyses, setShowSavedAnalyses] = useState(false);
+
+  // eBay integration state
+  const [ebayPricing, setEbayPricing] = useState(null);
+  const [isLoadingEbay, setIsLoadingEbay] = useState(false);
+  const [ebayError, setEbayError] = useState(null);
+  const [showEbayComparison, setShowEbayComparison] = useState(false);
 
   // Sensitivity ranges for analysis
   const sensitivityRanges = {
@@ -393,6 +400,47 @@ const DroneImportDashboard = () => {
     loadSavedAnalyses();
   }, []);
 
+  // eBay integration functions
+  const fetchEbayPricing = async () => {
+    setIsLoadingEbay(true);
+    setEbayError(null);
+
+    try {
+      const results = await ebayService.searchDroneListings(droneSpecs.model, {
+        condition: ['new', 'used'],
+        maxResults: 50
+      });
+
+      if (results.success) {
+        setEbayPricing(results);
+        setShowEbayComparison(true);
+      } else {
+        setEbayError(results.error || 'Failed to fetch eBay pricing');
+      }
+    } catch (error) {
+      setEbayError('Network error while fetching eBay data');
+      console.error('eBay pricing fetch failed:', error);
+    }
+
+    setIsLoadingEbay(false);
+  };
+
+  const updatePriceFromEbay = (price) => {
+    setDroneSpecs({ ...droneSpecs, priceOverride: Math.round(price) });
+    setShowEbayComparison(false);
+  };
+
+  // Auto-fetch eBay pricing when drone model changes
+  useEffect(() => {
+    if (droneSpecs.model && droneSpecs.model !== 'DJI Phantom Standard') {
+      const timeoutId = setTimeout(() => {
+        fetchEbayPricing();
+      }, 1000); // Debounce for 1 second
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [droneSpecs.model]);
+
   // Threshold alerts
   const alerts = useMemo(() => {
     const alertList = [];
@@ -711,6 +759,22 @@ const DroneImportDashboard = () => {
                     <History size={16} />
                     History ({savedAnalyses.length})
                   </button>
+                  
+                  <button
+                    onClick={fetchEbayPricing}
+                    disabled={isLoadingEbay}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                  >
+                    <ShoppingCart size={16} />
+                    {isLoadingEbay ? (
+                      <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'eBay Prices'
+                    )}
+                  </button>
                 </div>
               </div>
               <p className="text-gray-600 mt-2">Dallas, TX → Buenos Aires, Argentina</p>
@@ -846,6 +910,149 @@ const DroneImportDashboard = () => {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        )}
+
+        {/* eBay Price Comparison Panel */}
+        {showEbayComparison && ebayPricing && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <ShoppingCart className="text-orange-600" />
+              eBay Market Pricing - {droneSpecs.model}
+              <button
+                onClick={() => setShowEbayComparison(false)}
+                className="ml-auto text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </h3>
+            
+            {ebayPricing.summary.totalFound > 0 ? (
+              <div className="space-y-4">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {ebayPricing.summary.totalFound}
+                    </div>
+                    <div className="text-sm text-gray-600">Active Listings</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      ${ebayPricing.summary.avgPrice.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-600">Average Price</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-blue-600">
+                      ${ebayPricing.summary.priceRange.min.toLocaleString()} - ${ebayPricing.summary.priceRange.max.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-600">Price Range</div>
+                  </div>
+                  <div className="text-center">
+                    <button
+                      onClick={() => updatePriceFromEbay(ebayPricing.summary.avgPrice)}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm"
+                    >
+                      Use Avg Price
+                    </button>
+                  </div>
+                </div>
+
+                {/* Condition Breakdown */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {Object.entries(ebayPricing.summary.conditions).map(([condition, data]) => (
+                    <div key={condition} className="border rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-2">{condition}</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Count:</span>
+                          <span className="font-medium">{data.count}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Avg Price:</span>
+                          <span className="font-medium">${data.avgPrice.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Range:</span>
+                          <span className="font-medium text-xs">
+                            ${data.priceRange.min.toLocaleString()} - ${data.priceRange.max.toLocaleString()}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => updatePriceFromEbay(data.avgPrice)}
+                          className="w-full px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                        >
+                          Use This Price
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top Listings */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Top Listings</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {ebayPricing.results.slice(0, 8).map((listing, index) => (
+                      <div key={listing.id} className="flex items-center gap-4 p-3 border rounded-lg hover:bg-gray-50">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm truncate">{listing.title}</div>
+                          <div className="text-xs text-gray-500">
+                            {listing.condition} • {listing.location} • 
+                            Relevance: {(listing.relevanceScore * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-green-600">${listing.totalPrice.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">
+                            {listing.shipping > 0 && `+$${listing.shipping} shipping`}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => updatePriceFromEbay(listing.totalPrice)}
+                            className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                          >
+                            Use
+                          </button>
+                          {listing.url && (
+                            <a
+                              href={listing.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                            >
+                              <ExternalLink size={12} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No eBay listings found for {droneSpecs.model}. Try a different model or check the spelling.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* eBay Error Display */}
+        {ebayError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertTriangle size={20} />
+              <span>eBay Integration Error: {ebayError}</span>
+              <button
+                onClick={() => setEbayError(null)}
+                className="ml-auto text-red-600 hover:text-red-800"
+              >
+                ×
+              </button>
             </div>
           </div>
         )}
